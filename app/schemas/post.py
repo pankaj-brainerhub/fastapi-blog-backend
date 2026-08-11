@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.constants.post import PostStatus
+
 
 class PostCreate(BaseModel):
     title: str = Field(
@@ -35,15 +37,18 @@ class PostUpdate(BaseModel):
         gt=0,
     )
 
+    status: PostStatus | None = None
+
 
 class PostResponse(BaseModel):
     model_config = ConfigDict(
-        from_attributes=True
+        from_attributes=True,
     )
 
     id: int
     title: str
     content: str
+    status: PostStatus
     user_id: int
     category_id: int
     created_at: datetime
