@@ -23,3 +23,10 @@ class NotFoundException(AppException):
             message=message,
             status_code=404,
         )
+
+class UnauthorizedException(AppException):
+    def __init__(self, message: str = "Invalid credentials."):
+        super().__init__(
+            message=message,
+            status_code=401,
+        )
