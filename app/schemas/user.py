@@ -1,7 +1,5 @@
-from datetime import datetime
-
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
-
+from datetime import datetime
 
 class UserCreate(BaseModel):
     name: str = Field(min_length=2, max_length=100)
@@ -31,3 +29,11 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+
+class UserListResponse(BaseModel):
+    items: list[UserResponse]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
