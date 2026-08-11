@@ -4,6 +4,7 @@ from app.constants.roles import RoleEnum
 from app.core.security import (
     create_access_token,
     create_refresh_token,
+    decode_token,
     hash_password,
     verify_password,
 )
@@ -13,7 +14,11 @@ from app.exceptions import (
 )
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import LoginRequest, TokenResponse
+from app.schemas.auth import (
+    LoginRequest,
+    RefreshTokenRequest,
+    TokenResponse,
+)
 from app.schemas.user import UserCreate
 
 
@@ -23,7 +28,10 @@ class AuthService:
         self.db = db
         self.user_repository = UserRepository(db)
 
-    def register(self, data: UserCreate) -> User:
+    def register(
+        self,
+        data: UserCreate,
+    ) -> User:
 
         existing_user = self.user_repository.get_by_email(
             data.email
@@ -53,7 +61,10 @@ class AuthService:
             self.db.rollback()
             raise
 
-    def login(self, data: LoginRequest) -> TokenResponse:
+    def login(
+        self,
+        data: LoginRequest,
+    ) -> TokenResponse:
 
         user = self.user_repository.get_by_email(
             data.email
@@ -73,8 +84,75 @@ class AuthService:
                 "User account is inactive."
             )
 
-        access_token = create_access_token(user.id)
-        refresh_token = create_refresh_token(user.id)
+        access_token = create_access_token(
+            user.id
+        )
+
+        refresh_token = create_refresh_token(
+            user.id
+        )
+
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
+
+    def refresh(
+        self,
+        data: RefreshTokenRequest,
+    ) -> TokenResponse:
+
+        try:
+            payload = decode_token(
+                data.refresh_token
+            )
+
+        except Exception:
+            raise UnauthorizedException(
+                "Invalid or expired refresh token."
+            )
+
+        if payload.get("type") != "refresh":
+            raise UnauthorizedException(
+                "Invalid refresh token."
+            )
+
+        user_id = payload.get("sub")
+
+        if not user_id:
+            raise UnauthorizedException(
+                "Invalid refresh token."
+            )
+
+        try:
+            user_id = int(user_id)
+
+        except (TypeError, ValueError):
+            raise UnauthorizedException(
+                "Invalid refresh token."
+            )
+
+        user = self.user_repository.get_by_id(
+            user_id
+        )
+
+        if not user:
+            raise UnauthorizedException(
+                "User not found."
+            )
+
+        if not user.is_active:
+            raise UnauthorizedException(
+                "User account is inactive."
+            )
+
+        access_token = create_access_token(
+            user.id
+        )
+
+        refresh_token = create_refresh_token(
+            user.id
+        )
 
         return TokenResponse(
             access_token=access_token,
