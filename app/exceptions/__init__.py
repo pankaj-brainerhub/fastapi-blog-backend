@@ -1,6 +1,7 @@
 from app.exceptions.common import (
     AppException,
     ConflictException,
+    ForbiddenException,
     NotFoundException,
     UnauthorizedException,
 )
@@ -8,6 +9,7 @@ from app.exceptions.common import (
 __all__ = [
     "AppException",
     "ConflictException",
+    "ForbiddenException",
     "NotFoundException",
     "UnauthorizedException",
 ]
