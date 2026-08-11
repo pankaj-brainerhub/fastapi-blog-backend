@@ -1,3 +1,5 @@
+import math
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -11,6 +13,7 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
+from app.schemas.response import ApiResponse
 from app.services.auth_service import AuthService
 
 
@@ -22,7 +25,7 @@ router = APIRouter(
 
 @router.post(
     "/register",
-    response_model=UserResponse,
+    response_model=ApiResponse[UserResponse],
     status_code=201,
 )
 def register(
@@ -30,43 +33,58 @@ def register(
     db: Session = Depends(get_db),
 ):
     service = AuthService(db)
+    user = service.register(data)
 
-    return service.register(data)
+    return ApiResponse(
+        message="Account created successfully.",
+        data=UserResponse.model_validate(user),
+    )
 
 
 @router.post(
     "/login",
-    response_model=TokenResponse,
+    response_model=ApiResponse[TokenResponse],
 )
 def login(
     data: LoginRequest,
     db: Session = Depends(get_db),
 ):
     service = AuthService(db)
+    tokens = service.login(data)
 
-    return service.login(data)
+    return ApiResponse(
+        message="Logged in successfully.",
+        data=tokens,
+    )
 
 
 @router.post(
     "/refresh",
-    response_model=TokenResponse,
+    response_model=ApiResponse[TokenResponse],
 )
 def refresh_token(
     data: RefreshTokenRequest,
     db: Session = Depends(get_db),
 ):
     service = AuthService(db)
+    tokens = service.refresh(data)
 
-    return service.refresh(data)
+    return ApiResponse(
+        message="Token refreshed successfully.",
+        data=tokens,
+    )
 
 
 @router.get(
     "/me",
-    response_model=UserResponse,
+    response_model=ApiResponse[UserResponse],
 )
 def get_me(
     current_user: User = Depends(
         get_current_user
     ),
 ):
-    return current_user
+    return ApiResponse(
+        message="User profile fetched successfully.",
+        data=UserResponse.model_validate(current_user),
+    )
